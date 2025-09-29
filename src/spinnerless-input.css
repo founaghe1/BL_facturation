@@ -1,0 +1,12 @@
+/* Supprimer les flèches des inputs number */
+input[type=number].no-spinner::-webkit-inner-spin-button,
+input[type=number].no-spinner::-webkit-outer-spin-button {
+  /* Chrome, Safari, Edge */
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type=number].no-spinner {
+  /* Firefox et standard */
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
