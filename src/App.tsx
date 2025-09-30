@@ -330,11 +330,13 @@ function App() {
                   <ul style={{ paddingLeft: '20px', marginTop: '5px', lineHeight: '1.4', fontSize: '12px', color: '#555', listStyleType: 'disc' }}>
                     <li>Toujours verifier vos articles chez le GP ou expediteur avant de quiter.</li>
                     <li>En cas d'erreur ou de defaut d'article, le signaler automatiquement lors des verifications.</li>
-                    <li>Les retours sont acceptés dans un délai de 5 jours pour les articles à l'extrieur du Sénégal suivant la date de reception.</li>
+                    <li>Les retours sont acceptés dans un délai de 5 jours pour les articles expediés hors Sénégal suivant la date de reception.</li>
+                    <li>Pour les achats à Dakar, vous avez 24h pour échanger, aucun remboursement n’est effectuer, uniquement échange ou avoir</li>
                     <li>Les articles doivent être dans leur état d'origine, non utilisés.</li>
                     <li>Les articles soldés ou en promotion ne sont pas éligibles aux retours ou aux échanges.</li>
                     <li>Veuillez conserver le reçu ou la preuve d'achat pour faciliter le processus de retour ou d'échange.</li>
                     <li>Les frais de retour sont à la charge du client, sauf en cas d'erreur de notre part (defaut de l'article ou erreur).</li>
+
                   </ul>
                   <div style={{ marginTop: '10px', fontSize: '12px', color: '#555' }}>
                     Merci pour votre confiance et votre achat !
