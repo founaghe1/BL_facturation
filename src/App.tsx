@@ -1,7 +1,11 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import InvoiceList from "./pages/InvoiceList";
+import DraftList from "./pages/DraftList";
 import { supabase } from "./supabaseClient";
 import { updateProductStockAndHistory } from "./utils/stock";
+import { upsertDraft } from "./utils/drafts";
+import Notification from "./components/Notification";
+import ConfirmModal from "./components/ConfirmModal";
 import styles from "./App.module.css";
 import AnimatedBackground from "./components/AnimatedBackground";
 import InvoiceHeader from "./components/InvoiceHeader";
@@ -19,10 +23,21 @@ function App() {
   const [client, setClient] = useState({ name: "", phone: "", address: "" });
   const [supplier, setSupplier] = useState({ name: "", phone: "", address: "" });
   // Date au format YYYY-MM-DD HH:MM:SS
-  const [date, setDate] = useState(() => new Date().toISOString().slice(0, 19).replace('T', ' '));
+  const [date, setDate] = useState(() => new Date().toISOString().slice(0, 19).replace('_', ' '));
   const [lines, setLines] = useState<InvoiceLineData[]>([defaultLine(), defaultLine(), defaultLine()]);
   const [redirect, setRedirect] = useState(false);
   const [showList, setShowList] = useState(false);
+  const [showDrafts, setShowDrafts] = useState(false);
+  const [currentDraftId, setCurrentDraftId] = useState<number | null>(null);
+  const [notif, setNotif] = useState<{ type?: 'success'|'error'|'info', message: string } | null>(null);
+  const [showConfirmDraft, setShowConfirmDraft] = useState(false);
+
+  // auto-hide notification after 3s
+  useEffect(() => {
+    if (!notif) return;
+    const t = setTimeout(() => setNotif(null), 3000);
+    return () => clearTimeout(t);
+  }, [notif]);
   const [selectedInvoice, setSelectedInvoice] = useState<any | null>(null);
   const [currency, setCurrency] = useState<'EUR' | 'USD' | 'CFA' | 'GNF'>('EUR');
   const pdfRef = useRef<HTMLDivElement>(null);
@@ -68,11 +83,13 @@ function App() {
       const invoiceLines = lines.filter(line => line.description && line.quantity > 0);
       
       // Vérifier le stock AVANT de créer la facture
-      const stockUpdateSuccess = await updateProductStockAndHistory(invoiceLines, date);
-      
-      // Si le stock est insuffisant, arrêter la création
-      if (!stockUpdateSuccess) {
-        alert("Création de facture annulée : stock insuffisant");
+  const stockResult: any = await updateProductStockAndHistory(invoiceLines, date);
+  console.debug('stock check result', stockResult, 'invoiceLines:', invoiceLines);
+      // Si le stock est insuffisant ou produit manquant, afficher notification et proposer brouillon
+      if (stockResult && stockResult.success === false) {
+        setNotif({ type: 'error', message: stockResult.message });
+        // proposer placement en brouillon si insuffisant
+        setShowConfirmDraft(true);
         return;
       }
 
@@ -105,6 +122,51 @@ function App() {
       // En cas d'erreur après la mise à jour du stock, vous pourriez vouloir restaurer le stock
       // Cette partie est optionnelle mais recommandée pour la cohérence des données
       console.warn("La facture n'a pas été créée mais le stock a peut-être été modifié");
+    }
+  };
+
+  const handleSaveDraft = async (existingId?: number) => {
+    try {
+      const invoiceLines = lines.filter(line => line.description && line.quantity > 0);
+      const draft = {
+        id: existingId ?? currentDraftId,
+        client_name: client.name,
+        client_phone: client.phone,
+        client_address: client.address,
+        supplier_name: supplier.name,
+        supplier_phone: supplier.phone,
+        supplier_address: supplier.address,
+        date: date,
+        total: total,
+        currency: currency,
+        lines: invoiceLines,
+      };
+
+      const res = await upsertDraft(draft);
+      console.debug('handleSaveDraft result', res);
+      if (res && res.error) {
+        console.error('Erreur Supabase lors de la sauvegarde du brouillon', res.error);
+        setNotif({ type: 'error', message: 'Erreur lors de la sauvegarde du brouillon: ' + (res.error.message || JSON.stringify(res.error)) });
+      } else {
+        if (res && res.data && Array.isArray(res.data) && res.data[0] && res.data[0].id) {
+          setCurrentDraftId(res.data[0].id);
+        }
+        setNotif({ type: 'success', message: 'Brouillon enregistré' });
+      }
+    } catch (err) {
+      console.error('Erreur sauvegarde brouillon', err);
+      alert('Erreur lors de la sauvegarde du brouillon');
+    }
+  };
+
+  // Confirm modal handler (placer en brouillon quand stock insuffisant)
+  const confirmPlaceDraft = async () => {
+    setShowConfirmDraft(false);
+    try {
+      await handleSaveDraft();
+    } catch (err) {
+      console.error('Erreur lors du placement en brouillon', err);
+      setNotif({ type: 'error', message: 'Erreur lors du placement en brouillon' });
     }
   };
 
@@ -141,6 +203,8 @@ function App() {
   if (showList && !selectedInvoice) {
     return (
       <AnimatedBackground>
+        {notif && <Notification type={notif.type as any} message={notif.message} onClose={() => setNotif(null)} />}
+        {showConfirmDraft && <ConfirmModal message={"Stock insuffisant. Voulez-vous placer cette facture en brouillon ?"} onConfirm={confirmPlaceDraft} onCancel={() => setShowConfirmDraft(false)} />}
         <InvoiceList onSelectInvoice={inv => setSelectedInvoice(inv)} />
         <div className="flex justify-center mt-6">
           <button
@@ -154,10 +218,43 @@ function App() {
     );
   }
 
+  // Afficher la liste des brouillons
+  if (showDrafts && !selectedInvoice) {
+    return (
+      <AnimatedBackground>
+        {notif && <Notification type={notif.type as any} message={notif.message} onClose={() => setNotif(null)} />}
+        {showConfirmDraft && <ConfirmModal message={"Stock insuffisant. Voulez-vous placer cette facture en brouillon ?"} onConfirm={confirmPlaceDraft} onCancel={() => setShowConfirmDraft(false)} />}
+        <DraftList onSelectDraft={d => {
+          // Charger le brouillon dans l'éditeur
+          setClient({ name: d.client_name || '', phone: d.client_phone || '', address: d.client_address || '' });
+          setSupplier({ name: d.supplier_name || '', phone: d.supplier_phone || '', address: d.supplier_address || '' });
+          setDate(d.date || new Date().toISOString().slice(0, 19).replace('_', ' '));
+          setCurrency(d.currency || 'EUR');
+          setLines((d.lines && Array.isArray(d.lines) ? d.lines : []).map((l: any) => ({
+            description: l.description || '',
+            quantity: l.quantity || 0,
+            unitPrice: l.unitPrice || 0,
+            total: l.total || 0,
+            product_id: l.product_id
+          })));
+          // remember draft id so future saves update instead of insert
+          setCurrentDraftId(d.id ?? null);
+          setShowDrafts(false);
+        }} />
+        <div className="flex justify-center mt-6">
+          <button className="px-4 py-2 rounded-full bg-indigo-600 text-white hover:bg-indigo-700 shadow-md" onClick={() => setShowDrafts(false)}>Retour à la création</button>
+        </div>
+      </AnimatedBackground>
+    );
+  }
+
+
   if (selectedInvoice) {
     // Affichage lecture seule de la facture sélectionnée avec le même rendu que la facture à télécharger
     return (
       <AnimatedBackground>
+        {notif && <Notification type={notif.type as any} message={notif.message} onClose={() => setNotif(null)} />}
+        {showConfirmDraft && <ConfirmModal message={"Stock insuffisant. Voulez-vous placer cette facture en brouillon ?"} onConfirm={confirmPlaceDraft} onCancel={() => setShowConfirmDraft(false)} />}
         <div className="flex flex-col items-center justify-center min-h-screen px-2 md:px-0">
           <div className="bg-white rounded-xl shadow-xl p-4 md:p-10 mt-10 md:mt-20 mb-2 w-full max-w-lg">
             <h2 className="text-2xl font-bold text-blue-700 mb-4">Facture #{selectedInvoice.id}</h2>
@@ -236,6 +333,8 @@ function App() {
   if (redirect) {
     return (
       <AnimatedBackground>
+        {notif && <Notification type={notif.type as any} message={notif.message} onClose={() => setNotif(null)} />}
+        {showConfirmDraft && <ConfirmModal message={"Stock insuffisant. Voulez-vous placer cette facture en brouillon ?"} onConfirm={confirmPlaceDraft} onCancel={() => setShowConfirmDraft(false)} />}
         <div className="flex flex-col items-center justify-center min-h-screen px-2 md:px-0">
           <div className="bg-white rounded-xl shadow-xl p-4 md:p-10 mt-10 md:mt-20 mb-2 ">
             <h2 className="text-2xl font-bold text-blue-700 mb-4">Facture créée !</h2>
@@ -376,6 +475,8 @@ function App() {
 
   return (
     <AnimatedBackground>
+      {notif && <Notification type={notif.type as any} message={notif.message} onClose={() => setNotif(null)} />}
+      {showConfirmDraft && <ConfirmModal message={"Stock insuffisant. Voulez-vous placer cette facture en brouillon ?"} onConfirm={confirmPlaceDraft} onCancel={() => setShowConfirmDraft(false)} />}
       <div className="max-w-full md:max-w-3xl mx-auto py-6 md:py-10 px-2 md:px-4">
         <InvoiceHeader 
           client={client}
@@ -400,16 +501,28 @@ function App() {
           </span>
         </div>
         
-        <div className="flex justify-center">
+        <div className="flex justify-center gap-4">
           <CreateInvoiceButton onClick={handleCreateInvoice} disabled={lines.length === 0} />
         </div>
         
-        <div className="flex justify-center mt-6">
+        <div className="flex flex-col items-center justify-center gap-4 mt-6">
+          <button
+            className="btn btn-primary btn-pink-500 w-50 transition hover:scale-105 bg-gradient-to-r from-pink-500 to-indigo-500 text-white shadow-md rounded-full px-4 cursor-pointer py-2"
+            onClick={() => handleSaveDraft()}
+          >
+            Placer au Brouillon
+          </button>
           <button
             className="btn btn-outline btn-indigo-500 btn-pink-500 transition hover:scale-105 bg-gradient-to-r from-pink-500 to-indigo-500 text-white shadow-md rounded-full px-4 py-2 cursor-pointer"
             onClick={() => setShowList(true)}
           >
             Voir toutes les factures
+          </button>
+          <button
+            className="btn btn-primary btn-pink-500 w-50 transition hover:scale-105 bg-gradient-to-r from-pink-500 to-indigo-500 text-white shadow-md rounded-full px-4 py-2 cursor-pointer"
+            onClick={() => setShowDrafts(true)}
+          >
+            Voir les brouillons
           </button>
         </div>
       </div>
