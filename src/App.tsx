@@ -208,7 +208,7 @@ function App() {
         <InvoiceList onSelectInvoice={inv => setSelectedInvoice(inv)} />
         <div className="flex justify-center mt-6">
           <button
-            className="btn btn-outline btn-pink-500 transition hover:scale-105 bg-gradient-to-r from-pink-500 to-indigo-500 text-white shadow-md rounded-full px-4 py-2 cursor-pointer"
+            className="px-4 py-2 rounded-full bg-gradient-to-r from-pink-500 to-indigo-500 text-white shadow-md cursor-pointer hover:bg-gradient-to-r hover:from-indigo-500 hover:to-pink-500 transition-all duration-3000"
             onClick={() => setShowList(false)}
           >
             Retour à la création
@@ -242,7 +242,7 @@ function App() {
           setShowDrafts(false);
         }} />
         <div className="flex justify-center mt-6">
-          <button className="px-4 py-2 rounded-full bg-indigo-600 text-white hover:bg-indigo-700 shadow-md" onClick={() => setShowDrafts(false)}>Retour à la création</button>
+          <button className="px-4 py-2 rounded-full bg-gradient-to-r from-pink-500 to-indigo-500 text-white shadow-md cursor-pointer hover:bg-gradient-to-r hover:from-indigo-500 hover:to-pink-500 transition-all duration-3000" onClick={() => setShowDrafts(false)}>Retour à la création</button>
         </div>
       </AnimatedBackground>
     );
@@ -317,7 +317,7 @@ function App() {
             
           </div>
             <div className="flex flex-col md:flex-row justify-center mt-6 gap-4">
-              <button className="btn btn-outline btn-pink-500 transition hover:scale-105 bg-gradient-to-r from-pink-500 to-indigo-500 text-white shadow-md rounded-full px-4 py-2 cursor-pointer" onClick={() => setSelectedInvoice(null)}>
+              <button className="px-4 py-2 rounded-full bg-gradient-to-r from-pink-500 to-indigo-500 text-white shadow-md cursor-pointer hover:bg-gradient-to-r hover:from-indigo-500 hover:to-pink-500 transition-all duration-3000" onClick={() => setSelectedInvoice(null)}>
                 Retour à la liste
               </button>
               {/* <button className="btn btn-outline btn-indigo-500" onClick={() => setShowList(false)}>
@@ -450,19 +450,19 @@ function App() {
             <div className="flex flex-col items-center  justify-center gap-4 mt-6">
               <button 
                 onClick={() => setRedirect(false)}
-                className="btn btn-outline btn-pink-500 w-50 transition hover:scale-105 bg-gradient-to-r from-pink-500 to-indigo-500 text-white shadow-md rounded-full px-4 py-2 cursor-pointer"
+                className="px-4 py-2 rounded-full bg-gradient-to-r from-pink-500 to-indigo-500 text-white shadow-md cursor-pointer hover:bg-gradient-to-r hover:from-indigo-500 hover:to-pink-500 transition-all duration-3000"
               >
                 Retour à l'édition
               </button>
               <button 
                 onClick={downloadPDF}
-                className="btn btn-primary btn-pink-500 w-50 transition hover:scale-105 bg-gradient-to-r from-pink-500 to-indigo-500 text-white shadow-md rounded-full px-4 py-2 cursor-pointer"
+                className="px-4 py-2 rounded-full bg-gradient-to-r from-pink-500 to-indigo-500 text-white shadow-md cursor-pointer hover:bg-gradient-to-r hover:from-indigo-500 hover:to-pink-500 transition-all duration-3000"
               >
                 Télécharger PDF
               </button>
               <button 
                 onClick={() => setShowList(true)}
-                className="btn btn-outline btn-indigo-500 w-50 btn-pink-500 transition hover:scale-105 bg-gradient-to-r from-pink-500 to-indigo-500 text-white shadow-md rounded-full px-4 py-2 cursor-pointer"
+                className="px-4 py-2 rounded-full bg-gradient-to-r from-pink-500 to-indigo-500 text-white shadow-md cursor-pointer hover:bg-gradient-to-r hover:from-indigo-500 hover:to-pink-500 transition-all duration-3000"
               >
                 Voir toutes les factures
               </button>
@@ -507,19 +507,19 @@ function App() {
         
         <div className="flex flex-col items-center justify-center gap-4 mt-6">
           <button
-            className="btn btn-primary btn-pink-500 w-50 transition hover:scale-105 bg-gradient-to-r from-pink-500 to-indigo-500 text-white shadow-md rounded-full px-4 cursor-pointer py-2"
+            className="btn px-4 py-2 rounded-full bg-gradient-to-r from-pink-500 to-indigo-500 text-white shadow-md cursor-pointer hover:bg-gradient-to-r hover:from-indigo-500 hover:to-pink-500 transition-all duration-3000"
             onClick={() => handleSaveDraft()}
           >
             Placer au Brouillon
           </button>
           <button
-            className="btn btn-outline btn-indigo-500 btn-pink-500 transition hover:scale-105 bg-gradient-to-r from-pink-500 to-indigo-500 text-white shadow-md rounded-full px-4 py-2 cursor-pointer"
+            className="btn px-4 py-2 rounded-full bg-gradient-to-r from-pink-500 to-indigo-500 text-white shadow-md cursor-pointer hover:bg-gradient-to-r hover:from-indigo-500 hover:to-pink-500 transition-all duration-3000"
             onClick={() => setShowList(true)}
           >
             Voir toutes les factures
           </button>
           <button
-            className="btn btn-primary btn-pink-500 w-50 transition hover:scale-105 bg-gradient-to-r from-pink-500 to-indigo-500 text-white shadow-md rounded-full px-4 py-2 cursor-pointer"
+            className="btn px-4 py-2 rounded-full bg-gradient-to-r from-pink-500 to-indigo-500 text-white shadow-md cursor-pointer hover:bg-gradient-to-r hover:from-indigo-500 hover:to-pink-500 transition-all duration-3000"
             onClick={() => setShowDrafts(true)}
           >
             Voir les brouillons
